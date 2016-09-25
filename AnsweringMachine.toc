@@ -1,0 +1,10 @@
+## Interface: 70000
+## Title: Answering Machine
+## Author: Malakahh
+## Notes: Keeps track of missed whispers
+## Version: 0.1a
+
+## SavedVariables: Store
+
+main.lua
+UI.lua
