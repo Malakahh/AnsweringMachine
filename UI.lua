@@ -2,6 +2,7 @@ local _, ns = ...
 
 --Window
 ns.UI = CreateFrame("Frame", "AnsweringMachineUI", UIParent)
+tinsert(UISpecialFrames,"AnsweringMachineUI");
 ns.UI:SetBackdrop({
 	bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
 	edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
@@ -14,6 +15,10 @@ ns.UI:SetSize(800, 650)
 ns.UI:SetPoint("CENTER")
 ns.UI:SetMovable(true)
 ns.UI:SetClampedToScreen(true)
+ns.UI:EnableMouseWheel(true)
+ns.UI:SetScript("OnMouseWheel", function(self, delta)
+	ns.UI.Scrollbar:SetValue(ns.UI.Scrollbar:GetValue() - delta)
+end)
 ns.UI.Margin = 16
 ns.UI.ItemSpacingVertical = 8
 ns.UI.ItemSpacingHorizontal = 16
@@ -46,7 +51,9 @@ ns.UI.ClassColors = {
 	ROGUE = "FFF569",
 	SHAMAN = "0070DE",
 	WARLOCK = "9482C9",
-	WARRIOR = "C79C6E"
+	WARRIOR = "C79C6E",
+
+	BNET = "00FFFF"
 }
 ns.UI:Hide()
 
@@ -59,7 +66,23 @@ function ns.UI:HideUI()
 	ns.UI:Hide()
 end
 
+function ns.UI:ToggleUI()
+	if ns.UI:IsShown() then
+		ns.UI:HideUI()
+	else
+		ns.UI:ShowUI()
+	end
+end
+
+function ns.UI:ClearSelected()
+	for i = 1, ns.UI.ItemsShownAtATime, 1 do
+		ns.UI["Item" .. i].selected = true
+		ns.UI.ItemOnClick(ns.UI["Item" .. i])
+	end
+end
+
 function ns.UI:PopulateItem(item, msg)
+	item.reference = msg
 	item.Author:SetText("Author: |cFF" .. self.ClassColors[msg.authorClass] .. msg.author .. "|r")
 	item.Recipient:SetText("Recipient: |cFF" .. self.ClassColors[msg.recipientClass] .. msg.recipient .. "|r")
 	item.Timestamp:SetText(date("%Y-%m-%d %H:%M:%S", msg.timestamp))
@@ -68,6 +91,8 @@ function ns.UI:PopulateItem(item, msg)
 end
 
 function ns.UI:OnScrollValueChanged(value)
+	ns.UI:ClearSelected()
+
 	for i = 1, ns.UI.ItemsShownAtATime, 1 do
 		if ns.UI.ItemList[value + i - 1] ~= nil then
 			ns.UI:PopulateItem(ns.UI["Item" .. i], ns.UI.ItemList[value + i - 1])
@@ -76,6 +101,8 @@ function ns.UI:OnScrollValueChanged(value)
 end
 
 function ns.UI.Invalidate()
+	ns.UI.Controls.TimeToReplyEditBox:SetText(Store.Settings.timeToReply)
+
 	wipe(ns.UI.ItemList)
 
 	for _,v in pairs(Store.Messages) do
@@ -90,10 +117,9 @@ function ns.UI.Invalidate()
 		return a.timestamp < b.timestamp
 	end)
 
+	ns.UI:ClearSelected()
+
 	local itemListCount = #ns.UI.ItemList
-
-	print("#: " .. itemListCount)
-
 	for i = 1, ns.UI.ItemsShownAtATime, 1 do
 		ns.UI["Item" .. i]:Show()
 	end
@@ -116,9 +142,10 @@ function ns.UI.Invalidate()
 	else
 		ns.UI.Scrollbar:SetMinMaxValues(1, itemListCount - ns.UI.ItemsShownAtATime + 1)
 		ns.UI.Scrollbar:SetValue(1)
+		ns.UI:OnScrollValueChanged(1)
 		ns.UI.Scrollbar:Show()
 
-		no.UI.NoMessagesText:Hide()
+		ns.UI.NoMessagesText:Hide()
 	end
 end
 
@@ -160,6 +187,7 @@ ns.UI.NoMessagesText:SetText("No messages")
 --Controls
 ns.UI.Controls = CreateFrame("Frame", nil, ns.UI)
 ns.UI.Controls.Margin = 8
+ns.UI.Controls.Spacing = 8
 ns.UI.Controls:SetPoint("TOPLEFT", ns.UI.Margin, -ns.UI.Margin)
 ns.UI.Controls:SetPoint("BOTTOMRIGHT", ns.UI, "BOTTOMLEFT", ns.UI.Margin + 200, ns.UI.Margin)
 ns.UI.Controls:SetBackdrop({
@@ -178,9 +206,69 @@ ns.UI.Controls:SetBackdrop({
 ns.UI.Controls:SetBackdropColor(0.09, 0.09, 0.09)
 ns.UI.Controls:SetBackdropBorderColor(0.5, 0.5, 0.5)
 
+--Controls.TimeToReply
+ns.UI.Controls.TimeToReplyText = ns.UI.Controls:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+ns.UI.Controls.TimeToReplyText:SetPoint("TOP", 0, -ns.UI.Controls.Margin - ns.UI.Controls.Spacing)
+ns.UI.Controls.TimeToReplyText:SetJustifyH("CENTER")
+ns.UI.Controls.TimeToReplyText:SetText("Time to reply (in sec):")
+
+ns.UI.Controls.TimeToReplyEditBox = CreateFrame("EditBox", nil, ns.UI.Controls, "InputBoxTemplate")
+ns.UI.Controls.TimeToReplyEditBox:SetPoint("TOP", ns.UI.Controls.TimeToReplyText, "BOTTOM", 0, -ns.UI.Controls.Spacing)
+ns.UI.Controls.TimeToReplyEditBox:SetPoint("LEFT", ns.UI.Controls.Margin + 8, 0)
+ns.UI.Controls.TimeToReplyEditBox:SetPoint("RIGHT", -ns.UI.Controls.Margin, 0)
+ns.UI.Controls.TimeToReplyEditBox:SetHeight(20)
+ns.UI.Controls.TimeToReplyEditBox:SetFontObject(GameFontWhite)
+ns.UI.Controls.TimeToReplyEditBox:SetAutoFocus(false)
+ns.UI.Controls.TimeToReplyEditBox:SetNumeric(true)
+ns.UI.Controls.TimeToReplyEditBox:SetJustifyH("CENTER")
+ns.UI.Controls.TimeToReplyEditBox:SetScript("OnEnterPressed", function(self)
+	Store.Settings.timeToReply = self:GetNumber()
+	self:ClearFocus()
+	ns.UI.Invalidate()
+end)
+
+--Controls.BtnRemoveSelected
+ns.UI.Controls.BtnRemoveSelected = CreateFrame("Button", nil, ns.UI.Controls)
+ns.UI.Controls.BtnRemoveSelected:SetPoint("TOP", ns.UI.Controls.TimeToReplyEditBox, "BOTTOM", 0, -ns.UI.Controls.Spacing * 3)
+ns.UI.Controls.BtnRemoveSelected:SetPoint("LEFT", ns.UI.Controls.Margin, 0)
+ns.UI.Controls.BtnRemoveSelected:SetPoint("RIGHT", -ns.UI.Controls.Margin, 0)
+ns.UI.Controls.BtnRemoveSelected:SetHeight(25)
+ns.UI.Controls.BtnRemoveSelected:SetNormalFontObject(GameFontNormal)
+ns.UI.Controls.BtnRemoveSelected:SetText("Remove Selected")
+ns.UI.Controls.BtnRemoveSelected:SetScript("OnClick", function()
+	for i = 1, ns.UI.ItemsShownAtATime, 1 do
+		if ns.UI["Item" .. i].selected then
+			ns.Controller:RemoveMsg(ns.UI["Item" .. i].reference)
+		end
+	end
+
+	ns.UI.Invalidate()
+end)
+
+ns.UI.Controls.BtnRemoveSelected.ntex = ns.UI.Controls.BtnRemoveSelected:CreateTexture()
+ns.UI.Controls.BtnRemoveSelected.ntex:SetTexture("Interface\\Buttons\\UI-Panel-Button-Up")
+ns.UI.Controls.BtnRemoveSelected.ntex:SetTexCoord(0, 0.625, 0, 0.6875)
+ns.UI.Controls.BtnRemoveSelected.ntex:SetAllPoints()
+ns.UI.Controls.BtnRemoveSelected:SetNormalTexture(ns.UI.Controls.BtnRemoveSelected.ntex)
+
+ns.UI.Controls.BtnRemoveSelected.htex = ns.UI.Controls.BtnRemoveSelected:CreateTexture()
+ns.UI.Controls.BtnRemoveSelected.htex:SetTexture("Interface\\Buttons\\UI-Panel-Button-Highlight")
+ns.UI.Controls.BtnRemoveSelected.htex:SetTexCoord(0, 0.625, 0, 0.6875)
+ns.UI.Controls.BtnRemoveSelected.htex:SetAllPoints()
+ns.UI.Controls.BtnRemoveSelected:SetHighlightTexture(ns.UI.Controls.BtnRemoveSelected.htex)
+
+ns.UI.Controls.BtnRemoveSelected.ptex = ns.UI.Controls.BtnRemoveSelected:CreateTexture()
+ns.UI.Controls.BtnRemoveSelected.ptex:SetTexture("Interface\\Buttons\\UI-Panel-Button-Down")
+ns.UI.Controls.BtnRemoveSelected.ptex:SetTexCoord(0, 0.625, 0, 0.6875)
+ns.UI.Controls.BtnRemoveSelected.ptex:SetAllPoints()
+ns.UI.Controls.BtnRemoveSelected:SetPushedTexture(ns.UI.Controls.BtnRemoveSelected.ptex)
+
+--Controls.BtnClose
 ns.UI.Controls.BtnClose = CreateFrame("Button", nil, ns.UI.Controls)
 ns.UI.Controls.BtnClose:SetPoint("BOTTOM", 0, ns.UI.Controls.Margin)
-ns.UI.Controls.BtnClose:SetSize(116, 25)
+ns.UI.Controls.BtnClose:SetPoint("LEFT", ns.UI.Controls.Margin, 0)
+ns.UI.Controls.BtnClose:SetPoint("RIGHT", -ns.UI.Controls.Margin, 0)
+ns.UI.Controls.BtnClose:SetHeight(25)
 ns.UI.Controls.BtnClose:SetNormalFontObject(GameFontNormal)
 ns.UI.Controls.BtnClose:SetText("Close")
 ns.UI.Controls.BtnClose:SetScript("OnClick", ns.UI.HideUI)
@@ -211,18 +299,16 @@ ns.UI.Scrollbar:SetWidth(16)
 ns.UI.Scrollbar:SetValueStep(1)
 ns.UI.Scrollbar:SetScript("OnValueChanged", ns.UI.OnScrollValueChanged)
 
-
-
 --Items
-function ns.UI:ItemOnClick()
-	if self.selected then
-		self:SetBackdropColor(0.09, 0.09, 0.09)
-		self:SetBackdropBorderColor(1.00, 1.00, 1.00)
-		self.selected = false
+function ns.UI.ItemOnClick(item)
+	if item.selected then
+		item:SetBackdropColor(0.09, 0.09, 0.09)
+		item:SetBackdropBorderColor(1.00, 1.00, 1.00)
+		item.selected = false
 	else
-		self:SetBackdropColor(0.00, 0.3, 0.3)
-		self:SetBackdropBorderColor(0.00, 1.00, 1.00)
-		self.selected = true
+		item:SetBackdropColor(0.00, 0.3, 0.3)
+		item:SetBackdropBorderColor(0.00, 1.00, 1.00)
+		item.selected = true
 	end
 end
 
@@ -250,16 +336,17 @@ ns.UI.Item1:SetScript("OnMouseDown", ns.UI.ItemOnClick)
 
 ns.UI.Item1.Author = ns.UI.Item1:CreateFontString(nil, "ARTWORK", "SystemFont_Huge1")
 ns.UI.Item1.Author:SetPoint("TOPLEFT", ns.UI.ItemMargin, -ns.UI.ItemMargin)
-ns.UI.Item1.Author:SetPoint("TOPRIGHT", -ns.UI.ItemMargin, -ns.UI.ItemMargin)
+ns.UI.Item1.Author:SetPoint("TOPRIGHT", ns.UI.Item1, "TOP", 0, -ns.UI.ItemMargin)
 ns.UI.Item1.Author:SetJustifyH("LEFT")
 
 ns.UI.Item1.Recipient = ns.UI.Item1:CreateFontString(nil, "ARTWORK", "SystemFont_Med3")
-ns.UI.Item1.Recipient:SetPoint("RIGHT", ns.UI.Item1.Author, "RIGHT")
+ns.UI.Item1.Recipient:SetPoint("LEFT", ns.UI.Item1.Author, "RIGHT", ns.UI.ItemMargin, 0)
+ns.UI.Item1.Recipient:SetPoint("TOPRIGHT", -ns.UI.ItemMargin, -ns.UI.ItemMargin)
 ns.UI.Item1.Recipient:SetJustifyH("RIGHT")
 
 ns.UI.Item1.Timestamp = ns.UI.Item1:CreateFontString(nil, "ARTWORK", "SystemFont_Small")
-ns.UI.Item1.Timestamp:SetPoint("TOPLEFT", ns.UI.Item1.Author, "BOTTOMLEFT")
-ns.UI.Item1.Timestamp:SetPoint("TOPRIGHT", ns.UI.Item1.Author, "BOTTOMRIGHT")
+ns.UI.Item1.Timestamp:SetPoint("TOPLEFT", ns.UI.Item1.Author, "BOTTOMLEFT", 0, -4)
+ns.UI.Item1.Timestamp:SetPoint("TOPRIGHT", ns.UI.Item1.Author, "BOTTOMRIGHT", 0, -4)
 ns.UI.Item1.Timestamp:SetJustifyH("LEFT")
 
 ns.UI.Item1.Rationale = ns.UI.Item1:CreateFontString(nil, "ARTWORK", "SystemFont_Small")
@@ -271,41 +358,30 @@ ns.UI.Item1.Msg:SetPoint("TOPLEFT", ns.UI.Item1.Timestamp, "BOTTOMLEFT", 0, -ns.
 ns.UI.Item1.Msg:SetPoint("BOTTOMRIGHT", ns.UI.Item1, "BOTTOMRIGHT", -ns.UI.ItemMargin, ns.UI.ItemMargin)
 ns.UI.Item1.Msg:SetJustifyH("LEFT")
 
---Generate remaining items
+--Generate remaining items, place in relation to previous
 for i = 2, ns.UI.ItemsShownAtATime, 1 do
 	ns.UI["Item" .. i] = CreateFrame("Frame", nil, ns.UI)
 	ns.UI["Item" .. i]:SetPoint("TOPLEFT", ns.UI["Item" .. i - 1], "BOTTOMLEFT", 0, -ns.UI.ItemMargin)
 	ns.UI["Item" .. i]:SetPoint("TOPRIGHT", ns.UI["Item" .. i - 1], "BOTTOMRIGHT", 0, -ns.UI.ItemMargin)
 	ns.UI["Item" .. i]:SetHeight(110)
-	ns.UI["Item" .. i]:SetBackdrop({
-	    bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-	    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-	    tile = true,
-	    tileSize = 16,
-	    edgeSize = 16,
-	    insets = {
-	        left = 5,
-	        right = 5,
-	        top = 5,
-	        bottom = 4
-	    }
-	})
+	ns.UI["Item" .. i]:SetBackdrop(ns.UI.Item1:GetBackdrop())
 	ns.UI["Item" .. i]:SetBackdropColor(0.09, 0.09, 0.09)
 	ns.UI["Item" .. i].selected = false
 	ns.UI["Item" .. i]:SetScript("OnMouseDown", ns.UI.ItemOnClick)
 
 	ns.UI["Item" .. i].Author = ns.UI["Item" .. i]:CreateFontString(nil, "ARTWORK", "SystemFont_Huge1")
 	ns.UI["Item" .. i].Author:SetPoint("TOPLEFT", ns.UI.ItemMargin, -ns.UI.ItemMargin)
-	ns.UI["Item" .. i].Author:SetPoint("TOPRIGHT", -ns.UI.ItemMargin, -ns.UI.ItemMargin)
+	ns.UI["Item" .. i].Author:SetPoint("TOPRIGHT", ns.UI["Item" .. i], "TOP", 0, -ns.UI.ItemMargin)
 	ns.UI["Item" .. i].Author:SetJustifyH("LEFT")
 
 	ns.UI["Item" .. i].Recipient = ns.UI["Item" .. i]:CreateFontString(nil, "ARTWORK", "SystemFont_Med3")
-	ns.UI["Item" .. i].Recipient:SetPoint("RIGHT", ns.UI["Item" .. i].Author, "RIGHT")
+	ns.UI["Item" .. i].Recipient:SetPoint("LEFT", ns.UI["Item" .. i].Author, "RIGHT", ns.UI.ItemMargin, 0)
+	ns.UI["Item" .. i].Recipient:SetPoint("TOPRIGHT", -ns.UI.ItemMargin, -ns.UI.ItemMargin)
 	ns.UI["Item" .. i].Recipient:SetJustifyH("RIGHT")
 
 	ns.UI["Item" .. i].Timestamp = ns.UI["Item" .. i]:CreateFontString(nil, "ARTWORK", "SystemFont_Small")
-	ns.UI["Item" .. i].Timestamp:SetPoint("TOPLEFT", ns.UI["Item" .. i].Author, "BOTTOMLEFT")
-	ns.UI["Item" .. i].Timestamp:SetPoint("TOPRIGHT", ns.UI["Item" .. i].Author, "BOTTOMRIGHT")
+	ns.UI["Item" .. i].Timestamp:SetPoint("TOPLEFT", ns.UI["Item" .. i].Author, "BOTTOMLEFT", 0, -4)
+	ns.UI["Item" .. i].Timestamp:SetPoint("TOPRIGHT", ns.UI["Item" .. i].Author, "BOTTOMRIGHT", 0, -4)
 	ns.UI["Item" .. i].Timestamp:SetJustifyH("LEFT")
 
 	ns.UI["Item" .. i].Rationale = ns.UI["Item" .. i]:CreateFontString(nil, "ARTWORK", "SystemFont_Small")
@@ -320,10 +396,6 @@ end
 
 SLASH_ANSWERINGMACHINE1 = '/am'
 local function SlashCommandHandler(msg, editBox)
-	if ns.UI:IsShown() then
-		ns.UI:HideUI()
-	else
-		ns.UI:ShowUI()
-	end
+	ns.UI:ToggleUI()
 end
 SlashCmdList["ANSWERINGMACHINE"] = SlashCommandHandler

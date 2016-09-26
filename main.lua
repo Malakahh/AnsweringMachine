@@ -8,6 +8,9 @@ function ns.Controller:ADDON_LOADED(addonName)
 	if addonName == "AnsweringMachine" then
 		self:RegisterEvent("CHAT_MSG_WHISPER")
 		self:RegisterEvent("CHAT_MSG_WHISPER_INFORM")
+		self:RegisterEvent("CHAT_MSG_BN_WHISPER")
+		self:RegisterEvent("CHAT_MSG_BN_WHISPER_INFORM")
+		self:RegisterEvent("PLAYER_LOGOUT")
 		
 		Store = Store or {}
 		Store.Messages = Store.Messages or {}
@@ -38,6 +41,31 @@ function ns.Controller:CHAT_MSG_WHISPER_INFORM(...)
 	end
 end
 
+function ns.Controller:CHAT_MSG_BN_WHISPER(...)
+	local msg, _, flags, _, _, _, _, _, _, _, _, _, presenceID = ...
+
+	self:NewBNETMessage(presenceID, flags, msg)
+	self:UpdateRecentMessages()
+end
+
+function ns.Controller:CHAT_MSG_BN_WHISPER_INFORM( ... )
+	local _, Author = BNGetFriendInfoByID(select(13, ...))
+
+	self:UpdateRecentMessages()
+
+	for k,v in pairs(self.recentMessages) do
+		if v.author == Author then
+			table.remove(self.recentMessages, k)
+		end
+	end
+end
+
+function ns.Controller:PLAYER_LOGOUT()
+	for _,v in pairs(self.recentMessages) do
+		table.insert(Store.Messages, v)
+	end
+end
+
 function ns.Controller:RemoveMsg(msg)
 	if tContains(Store.Messages, msg) then
 		for k,v in pairs(Store.Messages) do
@@ -59,7 +87,7 @@ function ns.Controller:RemoveMsg(msg)
 end
 
 function ns.Controller:UpdateSettings()
-	Store.Settings.timeToReply = Store.Settings.timeToReply or 30
+	Store.Settings.timeToReply = Store.Settings.timeToReply or 300
 end
 
 function ns.Controller:UpdateRecentMessages()
@@ -67,12 +95,27 @@ function ns.Controller:UpdateRecentMessages()
 
 	for k,v in pairs(self.recentMessages) do
 		if v.timestamp < serverTime - Store.Settings.timeToReply then
-			print("Message timed out:")
-			self:PrintMessage(v)
 			table.remove(self.recentMessages, k)
 			table.insert(Store.Messages, v)
 		end
 	end
+end
+
+function ns.Controller:NewBNETMessage(presenceID, Rationale, Msg)
+	local _, Author = BNGetFriendInfoByID(presenceID)
+	local _, Recipient = BNGetInfo()
+
+	local entry = {
+		author = Author,
+		authorClass = "BNET",
+		recipient = Recipient,
+		recipientClass = "BNET",
+		timestamp = GetServerTime(),
+		rationale = Rationale,
+		msg = Msg,
+	}
+
+	table.insert(self.recentMessages, entry)
 end
 
 function ns.Controller:NewMessage(AuthorGUID, Rationale, Msg)
@@ -97,7 +140,6 @@ function ns.Controller:NewMessage(AuthorGUID, Rationale, Msg)
 	}
 
 	table.insert(self.recentMessages, entry)
-	print("Msg added")
 end
 
 function ns.Controller:PrintMessage(msg)
