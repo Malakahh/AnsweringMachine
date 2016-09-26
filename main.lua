@@ -1,10 +1,10 @@
 local _, ns = ...
 
-local frame = CreateFrame("Frame")
-frame:SetScript("OnEvent", function(self, event, ...) self[event](self, ...) end)
-frame:RegisterEvent("ADDON_LOADED")
+ns.Controller = CreateFrame("Frame")
+ns.Controller:SetScript("OnEvent", function(self, event, ...) self[event](self, ...) end)
+ns.Controller:RegisterEvent("ADDON_LOADED")
 
-function frame:ADDON_LOADED(addonName)
+function ns.Controller:ADDON_LOADED(addonName)
 	if addonName == "AnsweringMachine" then
 		self:RegisterEvent("CHAT_MSG_WHISPER")
 		self:RegisterEvent("CHAT_MSG_WHISPER_INFORM")
@@ -19,14 +19,14 @@ function frame:ADDON_LOADED(addonName)
 	end
 end
 
-function frame:CHAT_MSG_WHISPER(...)
-	local msg, author, _, _, _, flags = ...
+function ns.Controller:CHAT_MSG_WHISPER(...)
+	local msg, _, _, _, _, flags, _, _, _, _, _, authorGUID = ...
 
-	self:NewMessage(author, flags, msg)
+	self:NewMessage(authorGUID, flags, msg)
 	self:UpdateRecentMessages()
 end
 
-function frame:CHAT_MSG_WHISPER_INFORM(...)
+function ns.Controller:CHAT_MSG_WHISPER_INFORM(...)
 	local _, otherPlayer = ...
 
 	self:UpdateRecentMessages()
@@ -34,17 +34,35 @@ function frame:CHAT_MSG_WHISPER_INFORM(...)
 	for k,v in pairs(self.recentMessages) do
 		if v.author == otherPlayer then
 			table.remove(self.recentMessages, k)
-			print("Message reply:")
-			self:PrintMessage(v)
 		end
 	end
 end
 
-function frame:UpdateSettings()
-	Store.Settings.timeToReply = Store.Settings.timeToReply or 1
+function ns.Controller:RemoveMsg(msg)
+	if tContains(Store.Messages, msg) then
+		for k,v in pairs(Store.Messages) do
+			if msg == v then
+				table.remove(Store.Messages, k)
+				return true
+			end
+		end
+	elseif tContains(self.recentMessages, msg) then
+		for k,v in pairs(self.recentMessages, msg) do
+			if msg == v then
+				table.remove(self.recentMessages, k)
+				return true
+			end
+		end
+	else 
+		return false
+	end
 end
 
-function frame:UpdateRecentMessages()
+function ns.Controller:UpdateSettings()
+	Store.Settings.timeToReply = Store.Settings.timeToReply or 30
+end
+
+function ns.Controller:UpdateRecentMessages()
 	local serverTime = GetServerTime()
 
 	for k,v in pairs(self.recentMessages) do
@@ -57,13 +75,22 @@ function frame:UpdateRecentMessages()
 	end
 end
 
-function frame:NewMessage(Author, Rationale, Msg)
+function ns.Controller:NewMessage(AuthorGUID, Rationale, Msg)
 	local playername = UnitName("player")
 	local playerrealm = GetRealmName()
+	local _, playerClassTAG = UnitClass("player")
+
+	local _, AuthorClassTAG, _, _, _, AuthorName, AuthorRealm = GetPlayerInfoByGUID(AuthorGUID)
+
+	if AuthorRealm == "" then
+		AuthorRealm = playerrealm
+	end
 
 	local entry = {
-		author = Author,
+		author = AuthorName .. "-" .. AuthorRealm,
+		authorClass = AuthorClassTAG,
 		recipient = playername .. "-" .. playerrealm,
+		recipientClass = playerClassTAG,
 		timestamp = GetServerTime(),
 		rationale = Rationale,
 		msg = Msg,
@@ -71,12 +98,13 @@ function frame:NewMessage(Author, Rationale, Msg)
 
 	table.insert(self.recentMessages, entry)
 	print("Msg added")
-	self:PrintMessage(entry)
 end
 
-function frame:PrintMessage(msg)
+function ns.Controller:PrintMessage(msg)
 	print("Author: " .. msg.author)
+	print("authorClass: " .. msg.authorClass)
 	print("recipient: " .. msg.recipient)
+	print("recipientClass: " .. msg.recipientClass)
 	print("timestamp: " .. msg.timestamp)
 	print("rationale: " .. msg.rationale)
 	print("msg: " .. msg.msg)
