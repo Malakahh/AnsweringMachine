@@ -2,9 +2,10 @@
 ## Title: Answering Machine
 ## Author: Malakahh
 ## Notes: Keeps track of missed whispers
-## Version: 0.5b
+## Version: 0.6b
 
 ## SavedVariables: Store
 
 main.lua
 UI.lua
+Notification.lua

@@ -6,6 +6,7 @@ ns.Controller:RegisterEvent("ADDON_LOADED")
 
 function ns.Controller:ADDON_LOADED(addonName)
 	if addonName == "AnsweringMachine" then
+		self:RegisterEvent("PLAYER_LOGIN")
 		self:RegisterEvent("CHAT_MSG_WHISPER")
 		self:RegisterEvent("CHAT_MSG_WHISPER_INFORM")
 		self:RegisterEvent("CHAT_MSG_BN_WHISPER")
@@ -19,6 +20,25 @@ function ns.Controller:ADDON_LOADED(addonName)
 
 		self.recentMessages = {}
 		self:UpdateRecentMessages()
+	end
+end
+
+function ns.Controller:FadeDelayTimerOnUpdate(elapsed)
+	ns.Controller.FadeDelayTimer = ns.Controller.FadeDelayTimer + elapsed
+
+	if not ns.Notification:IsShown() then
+		self:SetScript("OnUpdate", nil)
+	elseif ns.Controller.FadeDelayTimer >= 10 then
+		self:SetScript("OnUpdate", nil)
+		ns.Notification:Fade()
+	end
+end
+
+function ns.Controller:PLAYER_LOGIN()
+	if #Store.Messages > 0 or #self.recentMessages > 0 then
+		ns.Notification:Show()
+		ns.Controller.FadeDelayTimer = 0
+		self:SetScript("OnUpdate", self.FadeDelayTimerOnUpdate)
 	end
 end
 
