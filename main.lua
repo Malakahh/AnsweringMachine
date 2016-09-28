@@ -69,12 +69,12 @@ function ns.Controller:CHAT_MSG_BN_WHISPER(...)
 end
 
 function ns.Controller:CHAT_MSG_BN_WHISPER_INFORM( ... )
-	local _, Author = BNGetFriendInfoByID(select(13, ...))
+	local _, _, BNETTag = BNGetFriendInfoByID(select(13, ...))
 
 	self:UpdateRecentMessages()
 
 	for k,v in pairs(self.recentMessages) do
-		if v.author == Author then
+		if v.author == BNETTag then
 			table.remove(self.recentMessages, k)
 		end
 	end
@@ -122,11 +122,11 @@ function ns.Controller:UpdateRecentMessages()
 end
 
 function ns.Controller:NewBNETMessage(presenceID, Rationale, Msg)
-	local _, Author = BNGetFriendInfoByID(presenceID)
+	local _, _, BNETTag = BNGetFriendInfoByID(presenceID)
 	local _, Recipient = BNGetInfo()
 
 	local entry = {
-		author = Author,
+		author = BNETTag,
 		authorClass = "BNET",
 		recipient = Recipient,
 		recipientClass = "BNET",
