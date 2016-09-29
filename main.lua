@@ -43,9 +43,14 @@ function ns.Controller:PLAYER_LOGIN()
 end
 
 function ns.Controller:CHAT_MSG_WHISPER(...)
-	local msg, _, _, _, _, flags, _, _, _, _, _, authorGUID = ...
+	local msg, _, _, _, _, _, _, _, _, _, _, authorGUID = ...
+	local rationale = self:GetRationale()
 
-	self:NewMessage(authorGUID, flags, msg)
+	if not self:CheckConfinements(rationale) then
+		return
+	end
+
+	self:NewMessage(authorGUID, rationale, msg)
 	self:UpdateRecentMessages()
 end
 
@@ -62,9 +67,14 @@ function ns.Controller:CHAT_MSG_WHISPER_INFORM(...)
 end
 
 function ns.Controller:CHAT_MSG_BN_WHISPER(...)
-	local msg, _, flags, _, _, _, _, _, _, _, _, _, presenceID = ...
+	local msg, _, _, _, _, _, _, _, _, _, _, _, presenceID = ...
+	local rationale = self:GetRationale()
 
-	self:NewBNETMessage(presenceID, flags, msg)
+	if not self:CheckConfinements(rationale) then
+		return
+	end
+
+	self:NewBNETMessage(presenceID, rationale, msg)
 	self:UpdateRecentMessages()
 end
 
@@ -108,6 +118,10 @@ end
 
 function ns.Controller:UpdateSettings()
 	Store.Settings.timeToReply = Store.Settings.timeToReply or 300
+	Store.Settings.Confines = Store.Settings.Confines or {
+		AFK = true,
+		DND = true
+	}
 end
 
 function ns.Controller:UpdateRecentMessages()
@@ -118,6 +132,30 @@ function ns.Controller:UpdateRecentMessages()
 			table.remove(self.recentMessages, k)
 			table.insert(Store.Messages, v)
 		end
+	end
+end
+
+function ns.Controller:GetRationale()
+	if UnitIsAFK("player") then
+		return "AFK"
+	end
+
+	if UnitIsDND("player") then
+		return "DND"
+	end
+end
+
+function ns.Controller:CheckConfinements(Rationale)
+	local c = Store.Settings.Confines
+
+	if Rationale == "AFK" and c.AFK then
+		return true
+	elseif Rationale == "DND" and c.DND then
+		return true
+	elseif not c.AFK and not c.DND then
+		return true
+	else 
+		return false
 	end
 end
 

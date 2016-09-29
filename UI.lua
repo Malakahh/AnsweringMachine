@@ -102,6 +102,8 @@ end
 
 function ns.UI.Invalidate()
 	ns.UI.Controls.TimeToReplyEditBox:SetText(Store.Settings.timeToReply)
+	ns.UI.Controls.ConfineAFK:SetChecked(Store.Settings.Confines.AFK)
+	ns.UI.Controls.ConfineDND:SetChecked(Store.Settings.Confines.DND)
 
 	wipe(ns.UI.ItemList)
 
@@ -147,6 +149,10 @@ function ns.UI.Invalidate()
 
 		ns.UI.NoMessagesText:Hide()
 	end
+end
+
+function ns.UI:OnCheckedChanged()
+	Store.Settings.Confines[self.value] = self:GetChecked()
 end
 
 --Header
@@ -263,6 +269,32 @@ ns.UI.Controls.BtnRemoveSelected.ptex:SetTexCoord(0, 0.625, 0, 0.6875)
 ns.UI.Controls.BtnRemoveSelected.ptex:SetAllPoints()
 ns.UI.Controls.BtnRemoveSelected:SetPushedTexture(ns.UI.Controls.BtnRemoveSelected.ptex)
 
+--Controls.ConfineTrackingTo
+ns.UI.Controls.ConfineTrackingTo = ns.UI.Controls:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+ns.UI.Controls.ConfineTrackingTo:SetPoint("TOP", ns.UI.Controls.BtnRemoveSelected, "BOTTOM", 0, -ns.UI.Controls.Spacing * 3)
+ns.UI.Controls.ConfineTrackingTo:SetPoint("LEFT", ns.UI.Controls.Margin, 0)
+ns.UI.Controls.ConfineTrackingTo:SetPoint("RIGHT", -ns.UI.Controls.Margin, 0)
+ns.UI.Controls.ConfineTrackingTo:SetJustifyH("LEFT")
+ns.UI.Controls.ConfineTrackingTo:SetText("Confine Tracking To:")
+
+--Controls.ConfineAFK
+ns.UI.Controls.ConfineAFK = CreateFrame("CheckButton", "AMConfineAFK", ns.UI.Controls, "ChatConfigCheckButtonTemplate")
+ns.UI.Controls.ConfineAFK:SetPoint("TOPLEFT", ns.UI.Controls.ConfineTrackingTo, "BOTTOMLEFT", 0, -ns.UI.Controls.Spacing)
+ns.UI.Controls.ConfineAFK.value = "AFK"
+ns.UI.Controls.ConfineAFK:SetScript("OnClick", ns.UI.OnCheckedChanged)
+_G[ns.UI.Controls.ConfineAFK:GetName() .. "Text"]:SetText("AFK")
+_G[ns.UI.Controls.ConfineAFK:GetName() .. "Text"]:SetPoint("LEFT", ns.UI.Controls.ConfineAFK, "RIGHT", ns.UI.Controls.Margin, 0)
+_G[ns.UI.Controls.ConfineAFK:GetName() .. "Text"]:SetPoint("RIGHT", ns.UI.Controls, "RIGHT", -ns.UI.Controls.Margin, 0)
+
+--Controls.ConfineDND
+ns.UI.Controls.ConfineDND = CreateFrame("CheckButton", "AMConfineDND", ns.UI.Controls, "ChatConfigCheckButtonTemplate")
+ns.UI.Controls.ConfineDND:SetPoint("TOP", ns.UI.Controls.ConfineAFK, "BOTTOM")
+ns.UI.Controls.ConfineDND.value = "DND"
+ns.UI.Controls.ConfineDND:SetScript("OnClick", ns.UI.OnCheckedChanged)
+_G[ns.UI.Controls.ConfineDND:GetName() .. "Text"]:SetText("DND")
+_G[ns.UI.Controls.ConfineDND:GetName() .. "Text"]:SetPoint("LEFT", ns.UI.Controls.ConfineDND, "RIGHT", ns.UI.Controls.Margin, 0)
+_G[ns.UI.Controls.ConfineDND:GetName() .. "Text"]:SetPoint("RIGHT", ns.UI.Controls, "RIGHT", -ns.UI.Controls.Margin, 0)
+
 --Controls.BtnClose
 ns.UI.Controls.BtnClose = CreateFrame("Button", nil, ns.UI.Controls)
 ns.UI.Controls.BtnClose:SetPoint("BOTTOM", 0, ns.UI.Controls.Margin)
@@ -350,7 +382,8 @@ ns.UI.Item1.Timestamp:SetPoint("TOPRIGHT", ns.UI.Item1.Author, "BOTTOMRIGHT", 0,
 ns.UI.Item1.Timestamp:SetJustifyH("LEFT")
 
 ns.UI.Item1.Rationale = ns.UI.Item1:CreateFontString(nil, "ARTWORK", "SystemFont_Small")
-ns.UI.Item1.Rationale:SetPoint("RIGHT", ns.UI.Item1.Timestamp, "RIGHT")
+ns.UI.Item1.Rationale:SetPoint("TOPLEFT", ns.UI.Item1.Recipient, "BOTTOMLEFT", 0, -4)
+ns.UI.Item1.Rationale:SetPoint("TOPRIGHT", ns.UI.Item1.Recipient, "BOTTOMRIGHT", 0, -4)
 ns.UI.Item1.Rationale:SetJustifyH("RIGHT")
 
 ns.UI.Item1.Msg = ns.UI.Item1:CreateFontString(nil, "ARTWORK", "SystemFont_Med3")
@@ -385,7 +418,8 @@ for i = 2, ns.UI.ItemsShownAtATime, 1 do
 	ns.UI["Item" .. i].Timestamp:SetJustifyH("LEFT")
 
 	ns.UI["Item" .. i].Rationale = ns.UI["Item" .. i]:CreateFontString(nil, "ARTWORK", "SystemFont_Small")
-	ns.UI["Item" .. i].Rationale:SetPoint("RIGHT", ns.UI["Item" .. i].Timestamp, "RIGHT")
+	ns.UI["Item" .. i].Rationale:SetPoint("TOPLEFT", ns.UI["Item" .. i].Recipient, "BOTTOMLEFT", 0, -4)
+	ns.UI["Item" .. i].Rationale:SetPoint("TOPRIGHT", ns.UI["Item" .. i].Recipient, "BOTTOMRIGHT", 0, -4)
 	ns.UI["Item" .. i].Rationale:SetJustifyH("RIGHT")
 
 	ns.UI["Item" .. i].Msg = ns.UI["Item" .. i]:CreateFontString(nil, "ARTWORK", "SystemFont_Med3")
