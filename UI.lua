@@ -104,6 +104,11 @@ function ns.UI.Invalidate()
 	ns.UI.Controls.TimeToReplyEditBox:SetText(Store.Settings.timeToReply)
 	ns.UI.Controls.ConfineAFK:SetChecked(Store.Settings.Confines.AFK)
 	ns.UI.Controls.ConfineDND:SetChecked(Store.Settings.Confines.DND)
+	ns.UI.Controls.ConfineBattleground:SetChecked(Store.Settings.Confines.Battleground)
+	ns.UI.Controls.ConfineArena:SetChecked(Store.Settings.Confines.Arena)
+	ns.UI.Controls.ConfineDungeon:SetChecked(Store.Settings.Confines.Dungeon)
+	ns.UI.Controls.ConfineRaid:SetChecked(Store.Settings.Confines.Raid)
+	ns.UI.Controls.ConfineScenario:SetChecked(Store.Settings.Confines.Scenario)
 
 	wipe(ns.UI.ItemList)
 
@@ -294,6 +299,51 @@ ns.UI.Controls.ConfineDND:SetScript("OnClick", ns.UI.OnCheckedChanged)
 _G[ns.UI.Controls.ConfineDND:GetName() .. "Text"]:SetText("DND")
 _G[ns.UI.Controls.ConfineDND:GetName() .. "Text"]:SetPoint("LEFT", ns.UI.Controls.ConfineDND, "RIGHT", ns.UI.Controls.Margin, 0)
 _G[ns.UI.Controls.ConfineDND:GetName() .. "Text"]:SetPoint("RIGHT", ns.UI.Controls, "RIGHT", -ns.UI.Controls.Margin, 0)
+
+--Controls.ConfineBattleground
+ns.UI.Controls.ConfineBattleground = CreateFrame("CheckButton", "AMConfineBattleground", ns.UI.Controls, "ChatConfigCheckButtonTemplate")
+ns.UI.Controls.ConfineBattleground:SetPoint("TOP", ns.UI.Controls.ConfineDND, "BOTTOM")
+ns.UI.Controls.ConfineBattleground.value = "Battleground"
+ns.UI.Controls.ConfineBattleground:SetScript("OnClick", ns.UI.OnCheckedChanged)
+_G[ns.UI.Controls.ConfineBattleground:GetName() .. "Text"]:SetText("Battleground")
+_G[ns.UI.Controls.ConfineBattleground:GetName() .. "Text"]:SetPoint("LEFT", ns.UI.Controls.ConfineBattleground, "RIGHT", ns.UI.Controls.Margin, 0)
+_G[ns.UI.Controls.ConfineBattleground:GetName() .. "Text"]:SetPoint("RIGHT", ns.UI.Controls, "RIGHT", -ns.UI.Controls.Margin, 0)
+
+--Controls.ConfineArena
+ns.UI.Controls.ConfineArena = CreateFrame("CheckButton", "AMConfineArena", ns.UI.Controls, "ChatConfigCheckButtonTemplate")
+ns.UI.Controls.ConfineArena:SetPoint("TOP", ns.UI.Controls.ConfineBattleground, "BOTTOM")
+ns.UI.Controls.ConfineArena.value = "Arena"
+ns.UI.Controls.ConfineArena:SetScript("OnClick", ns.UI.OnCheckedChanged)
+_G[ns.UI.Controls.ConfineArena:GetName() .. "Text"]:SetText("Arena")
+_G[ns.UI.Controls.ConfineArena:GetName() .. "Text"]:SetPoint("LEFT", ns.UI.Controls.ConfineArena, "RIGHT", ns.UI.Controls.Margin, 0)
+_G[ns.UI.Controls.ConfineArena:GetName() .. "Text"]:SetPoint("RIGHT", ns.UI.Controls, "RIGHT", -ns.UI.Controls.Margin, 0)
+
+--Controls.ConfineDungeon
+ns.UI.Controls.ConfineDungeon = CreateFrame("CheckButton", "AMConfineDungeon", ns.UI.Controls, "ChatConfigCheckButtonTemplate")
+ns.UI.Controls.ConfineDungeon:SetPoint("TOP", ns.UI.Controls.ConfineArena, "BOTTOM")
+ns.UI.Controls.ConfineDungeon.value = "Dungeon"
+ns.UI.Controls.ConfineDungeon:SetScript("OnClick", ns.UI.OnCheckedChanged)
+_G[ns.UI.Controls.ConfineDungeon:GetName() .. "Text"]:SetText("Dungeon")
+_G[ns.UI.Controls.ConfineDungeon:GetName() .. "Text"]:SetPoint("LEFT", ns.UI.Controls.ConfineDungeon, "RIGHT", ns.UI.Controls.Margin, 0)
+_G[ns.UI.Controls.ConfineDungeon:GetName() .. "Text"]:SetPoint("RIGHT", ns.UI.Controls, "RIGHT", -ns.UI.Controls.Margin, 0)
+
+--Controls.ConfineRaid
+ns.UI.Controls.ConfineRaid = CreateFrame("CheckButton", "AMConfineRaid", ns.UI.Controls, "ChatConfigCheckButtonTemplate")
+ns.UI.Controls.ConfineRaid:SetPoint("TOP", ns.UI.Controls.ConfineDungeon, "BOTTOM")
+ns.UI.Controls.ConfineRaid.value = "Raid"
+ns.UI.Controls.ConfineRaid:SetScript("OnClick", ns.UI.OnCheckedChanged)
+_G[ns.UI.Controls.ConfineRaid:GetName() .. "Text"]:SetText("Raid")
+_G[ns.UI.Controls.ConfineRaid:GetName() .. "Text"]:SetPoint("LEFT", ns.UI.Controls.ConfineRaid, "RIGHT", ns.UI.Controls.Margin, 0)
+_G[ns.UI.Controls.ConfineRaid:GetName() .. "Text"]:SetPoint("RIGHT", ns.UI.Controls, "RIGHT", -ns.UI.Controls.Margin, 0)
+
+--Controls.ConfineScenario
+ns.UI.Controls.ConfineScenario = CreateFrame("CheckButton", "AMConfineScenario", ns.UI.Controls, "ChatConfigCheckButtonTemplate")
+ns.UI.Controls.ConfineScenario:SetPoint("TOP", ns.UI.Controls.ConfineRaid, "BOTTOM")
+ns.UI.Controls.ConfineScenario.value = "Scenario"
+ns.UI.Controls.ConfineScenario:SetScript("OnClick", ns.UI.OnCheckedChanged)
+_G[ns.UI.Controls.ConfineScenario:GetName() .. "Text"]:SetText("Scenario")
+_G[ns.UI.Controls.ConfineScenario:GetName() .. "Text"]:SetPoint("LEFT", ns.UI.Controls.ConfineScenario, "RIGHT", ns.UI.Controls.Margin, 0)
+_G[ns.UI.Controls.ConfineScenario:GetName() .. "Text"]:SetPoint("RIGHT", ns.UI.Controls, "RIGHT", -ns.UI.Controls.Margin, 0)
 
 --Controls.BtnClose
 ns.UI.Controls.BtnClose = CreateFrame("Button", nil, ns.UI.Controls)

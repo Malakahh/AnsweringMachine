@@ -118,10 +118,35 @@ end
 
 function ns.Controller:UpdateSettings()
 	Store.Settings.timeToReply = Store.Settings.timeToReply or 300
-	Store.Settings.Confines = Store.Settings.Confines or {
-		AFK = true,
-		DND = true
-	}
+	Store.Settings.Confines = Store.Settings.Confines or {}
+
+	if Store.Settings.Confines.AFK == nil then
+		Store.Settings.Confines.AFK = true
+	end
+
+	if Store.Settings.Confines.DND == nil then
+		Store.Settings.Confines.DND = true
+	end
+
+	if Store.Settings.Confines.Battleground == nil then
+		Store.Settings.Confines.Battleground = true
+	end
+
+	if Store.Settings.Confines.Arena == nil then
+		Store.Settings.Confines.Arena = true
+	end
+
+	if Store.Settings.Confines.Dungeon == nil then
+		Store.Settings.Confines.Dungeon = true
+	end
+
+	if Store.Settings.Confines.Raid == nil then
+		Store.Settings.Confines.Raid = true
+	end
+
+	if Store.Settings.Confines.Scenario == nil then
+		Store.Settings.Confines.Scenario = true
+	end
 end
 
 function ns.Controller:UpdateRecentMessages()
@@ -136,12 +161,28 @@ function ns.Controller:UpdateRecentMessages()
 end
 
 function ns.Controller:GetRationale()
+	local inInstance, instanceType = IsInInstance()
+
 	if UnitIsAFK("player") then
 		return "AFK"
 	end
 
 	if UnitIsDND("player") then
 		return "DND"
+	end
+
+	if inInstance then
+		if instanceType == "pvp" then
+			return "Battleground"
+		elseif instanceType == "arena" then
+			return "Arena"
+		elseif instanceType == "party" then
+			return "Dungeon"
+		elseif instanceType == "raid" then
+			return "Raid"
+		elseif instanceType == "scenario" then
+			return "Scenario"
+		end
 	end
 end
 
@@ -152,10 +193,18 @@ function ns.Controller:CheckConfinements(Rationale)
 		return true
 	elseif Rationale == "DND" and c.DND then
 		return true
-	elseif not c.AFK and not c.DND then
+	elseif Rationale == "Battleground" and c.Battleground then
+		return true
+	elseif Rationale == "Arena" and c.Arena then
+		return true
+	elseif Rationale == "Dungeon" and c.Dungeon then
+		return true
+	elseif Rationale == "Raid" and c.Raid then
+		return true
+	elseif Rationale == "Scenario" and c.Scenario then
 		return true
 	else 
-		return false
+		return not c.AFK and not c.DND and not c.Battleground and not C.Arena and not C.Dungeon and not C.Raid and not c.Scenario
 	end
 end
 

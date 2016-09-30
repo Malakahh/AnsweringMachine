@@ -2,7 +2,7 @@
 ## Title: Answering Machine
 ## Author: Malakahh
 ## Notes: Keeps track of missed whispers
-## Version: 0.7b
+## Version: 0.8b
 
 ## SavedVariables: Store
 
