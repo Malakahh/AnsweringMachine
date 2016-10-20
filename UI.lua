@@ -1,45 +1,6 @@
 local _, ns = ...
 
---Window
-ns.UI = CreateFrame("Frame", "AnsweringMachineUI", UIParent)
-tinsert(UISpecialFrames,"AnsweringMachineUI");
-ns.UI:SetBackdrop({
-	bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-	edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-	tile = true,
-	tileSize = 32,
-	edgeSize = 32,
-	insets = { left = 8, right = 8, top = 8, bottom = 8 }
-})
-ns.UI:SetSize(800, 650)
-ns.UI:SetPoint("CENTER")
-ns.UI:SetMovable(true)
-ns.UI:SetClampedToScreen(true)
-ns.UI:EnableMouseWheel(true)
-ns.UI:SetScript("OnMouseWheel", function(self, delta)
-	ns.UI.Scrollbar:SetValue(ns.UI.Scrollbar:GetValue() - delta)
-end)
-ns.UI.Margin = 16
-ns.UI.ItemSpacingVertical = 8
-ns.UI.ItemSpacingHorizontal = 16
-ns.UI.ItemMargin = 8
-ns.UI.ItemsShownAtATime = 5
-ns.UI.ItemList = {}
--- ns.UI.ClassColors = {
--- 	DEATHKNIGHT = { 0.77, 0.12, 0.23 },
--- 	DEMONHUNTER = { 0.64, 0.19, 0.79 },
--- 	DRUID = { 1.00, 0.49, 0.04 },
--- 	HUNTER = { 0.67, 0.83, 0.45 },
--- 	MAGE = { 0.41, 0.80, 0.94 },
--- 	MONK = { 0.00, 1.00, 0.59 },
--- 	PALADIN = { 0.96, 0.55, 0.73 },
--- 	PRIEST = { 1.00, 1.00, 1.00 },
--- 	ROGUE = { 1.00, 0.96, 0.41 },
--- 	SHAMAN = { 0.00, 0.44, 0.87 },
--- 	WARLOCK = { 0.58, 0.51, 0.79 },
--- 	WARRIOR = { 0.78, 0.61, 0.43 }
--- }
-ns.UI.ClassColors = {
+local classColors = {
 	DEATHKNIGHT = "C41F3B",
 	DEMONHUNTER = "A330C9",
 	DRUID = "FF7D0A",
@@ -54,53 +15,166 @@ ns.UI.ClassColors = {
 	WARRIOR = "C79C6E",
 
 	BNET = "00FFFF"
+
+-- 	DEATHKNIGHT = { 0.77, 0.12, 0.23 },
+-- 	DEMONHUNTER = { 0.64, 0.19, 0.79 },
+-- 	DRUID = { 1.00, 0.49, 0.04 },
+-- 	HUNTER = { 0.67, 0.83, 0.45 },
+-- 	MAGE = { 0.41, 0.80, 0.94 },
+-- 	MONK = { 0.00, 1.00, 0.59 },
+-- 	PALADIN = { 0.96, 0.55, 0.73 },
+-- 	PRIEST = { 1.00, 1.00, 1.00 },
+-- 	ROGUE = { 1.00, 0.96, 0.41 },
+-- 	SHAMAN = { 0.00, 0.44, 0.87 },
+-- 	WARLOCK = { 0.58, 0.51, 0.79 },
+-- 	WARRIOR = { 0.78, 0.61, 0.43 }
 }
-ns.UI:Hide()
+
+local function CreateCheckBox(value, parent, point)
+	local chk = CreateFrame("CheckButton", "CheckBox" .. value, parent, "ChatConfigCheckButtonTemplate")
+	chk:SetPoint(unpack(point))
+	chk.value = value
+
+	chk:SetScript("OnClick", function(self)
+		Store.Settings.Confines[self.value] = self:GetChecked()
+	end)
+
+	_G[chk:GetName() .. "Text"]:SetText(value)
+	_G[chk:GetName() .. "Text"]:SetPoint("LEFT", chk, "RIGHT", parent.Margin, 0)
+	_G[chk:GetName() .. "Text"]:SetPoint("RIGHT", parent, "RIGHT", -parent.Margin, 0)
+
+	return chk
+end
+
+local function CreateButton(text, parent)
+	local btn = CreateFrame("Button", nil, parent)
+	btn:SetHeight(25)
+	btn:SetNormalFontObject(GameFontNormal)
+	btn:SetText(text)
+
+	btn.ntex = btn:CreateTexture()
+	btn.ntex:SetTexture("Interface\\BUTTONS\\UI-Panel-Button-Up")
+	btn.ntex:SetTexCoord(0, 0.625, 0, 0.6875)
+	btn.ntex:SetAllPoints()
+	btn:SetNormalTexture(btn.ntex)
+
+	btn.htex = btn:CreateTexture()
+	btn.htex:SetTexture("Interface\\BUTTONS\\UI-Panel-Button-Highlight")
+	btn.htex:SetTexCoord(0, 0.625, 0, 0.6875)
+	btn.htex:SetAllPoints()
+	btn:SetHighlightTexture(btn.htex)
+
+	btn.dtex = btn:CreateTexture()
+	btn.dtex:SetTexture("Interface\\BUTTONS\\UI-Panel-Button-Down")
+	btn.dtex:SetTexCoord(0, 0.625, 0, 0.6875)
+	btn.dtex:SetAllPoints()
+	btn:SetPushedTexture(btn.dtex)
+
+	return btn
+end
+
+local function CreateItemContainer(p1, p2)
+	local frameHeight = 110
+	local frame = CreateFrame("CheckButton", nil, ns.UI)
+	frame:SetPoint(unpack(p1))
+	frame:SetPoint(unpack(p2))
+	frame:SetHeight(frameHeight)
+
+	frame:SetBackdrop({
+		bgFile = "Interface\\FontStyles\\FontStyleParchment",
+		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+		tile = true,
+		tileSize = 80,
+		edgeSize = 24,
+		insets = { left = 6, right = 6, top = 6, bottom = 6 }})
+	frame:SetBackdropColor(0.5, 0.5, 0.5)
+	frame:SetBackdropBorderColor(0.227, 0.117, 0)
+
+	frame.htex = frame:CreateTexture(nil, "ARTWORK")
+	frame.htex:SetTexture("Interface\\CHATFRAME\\ChatFrameTab-NewMessage")
+	frame.htex:SetTexCoord(0.05, 0.95, 0.25, 1)
+	frame.htex:SetVertexColor(0.5, 0.5, 0, 0.25)
+	frame.htex:SetPoint("TOPLEFT")
+	frame.htex:SetPoint("TOPRIGHT")
+	frame.htex:SetPoint("BOTTOM", 0, frame:GetBackdrop().insets.bottom)
+	frame:SetHighlightTexture(frame.htex)
+
+	frame.Author = frame:CreateFontString(nil, "ARTWORK", "SystemFont_Huge1")
+	frame.Author:SetPoint("TOPLEFT", ns.UI.ItemMargin, -ns.UI.ItemMargin)
+	frame.Author:SetPoint("TOPRIGHT", frame, "TOP", 0, -ns.UI.ItemMargin)
+	frame.Author:SetJustifyH("LEFT")
+
+	frame.Recipient = frame:CreateFontString(nil, "ARTWORK", "SystemFont_Med3")
+	frame.Recipient:SetPoint("LEFT", frame.Author, "RIGHT", ns.UI.ItemMargin, 0)
+	frame.Recipient:SetPoint("TOPRIGHT", -ns.UI.ItemMargin, -ns.UI.ItemMargin)
+	frame.Recipient:SetJustifyH("RIGHT")
+
+	frame.Timestamp = frame:CreateFontString(nil, "ARTWORK", "SystemFont_Small")
+	frame.Timestamp:SetPoint("TOPLEFT", frame.Author, "BOTTOMLEFT", 0, -4)
+	frame.Timestamp:SetPoint("TOPRIGHT", frame.Author, "BOTTOMRIGHT", 0, -4)
+	frame.Timestamp:SetJustifyH("LEFT")
+
+	frame.Rationale = frame:CreateFontString(nil, "ARTWORK", "SystemFont_Small")
+	frame.Rationale:SetPoint("TOPLEFT", frame.Recipient, "BOTTOMLEFT", 0, -4)
+	frame.Rationale:SetPoint("TOPRIGHT", frame.Recipient, "BOTTOMRIGHT", 0, -4)
+	frame.Rationale:SetJustifyH("RIGHT")
+
+	frame.Msg = frame:CreateFontString(nil, "ARTWORK", "SystemFont_Med3")
+	frame.Msg:SetPoint("TOPLEFT", frame.Timestamp, "BOTTOMLEFT", 0, -ns.UI.ItemMargin)
+	frame.Msg:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -ns.UI.ItemMargin, ns.UI.ItemMargin)
+	frame.Msg:SetJustifyH("LEFT")
+
+	hooksecurefunc(frame, "SetChecked", function(self)
+		if self:GetChecked() then
+			frame:SetBackdropBorderColor(1, 0.815, 0)
+		else
+			frame:SetBackdropBorderColor(0.227, 0.117, 0)
+		end
+	end)
+
+	frame:SetScript("OnClick", function (self)
+		if self:GetChecked() then
+			frame:SetBackdropBorderColor(1, 0.815, 0)
+		else
+			frame:SetBackdropBorderColor(0.227, 0.117, 0)
+		end
+	end)
+
+	return frame
+end
+
+ns.UI = CreateFrame("Frame", "AnsweringMachineUI", UIParent)
+ns.UI.Controls = CreateFrame("Frame", nil, ns.UI)
+
+ns.UI.ItemList = {}
+ns.UI.ItemsShownAtATime = 5
+
+--Spacing
+ns.UI.Margin = 16
+ns.UI.ItemMargin = 14
+ns.UI.ItemSpacingVertical = 8
+ns.UI.ItemSpacingHorizontal = 16
+ns.UI.Controls.Margin = 8
+ns.UI.Controls.Spacing = 8
 
 function ns.UI:ShowUI()
-	ns.UI:Invalidate()
-	ns.UI:Show()
+	self:Update()
+	self:Show()
 end
 
 function ns.UI:HideUI()
-	ns.UI:Hide()
+	self:Hide()
 end
 
 function ns.UI:ToggleUI()
-	if ns.UI:IsShown() then
-		ns.UI:HideUI()
+	if self:IsShown() then
+		self:HideUI()
 	else
-		ns.UI:ShowUI()
+		self:ShowUI()
 	end
 end
 
-function ns.UI:ClearSelected()
-	for i = 1, ns.UI.ItemsShownAtATime, 1 do
-		ns.UI["Item" .. i].selected = true
-		ns.UI.ItemOnClick(ns.UI["Item" .. i])
-	end
-end
-
-function ns.UI:PopulateItem(item, msg)
-	item.reference = msg
-	item.Author:SetText("Author: |cFF" .. self.ClassColors[msg.authorClass] .. msg.author .. "|r")
-	item.Recipient:SetText("Recipient: |cFF" .. self.ClassColors[msg.recipientClass] .. msg.recipient .. "|r")
-	item.Timestamp:SetText(date("%Y-%m-%d %H:%M:%S", msg.timestamp))
-	item.Rationale:SetText(msg.rationale)
-	item.Msg:SetText(msg.msg)
-end
-
-function ns.UI:OnScrollValueChanged(value)
-	ns.UI:ClearSelected()
-
-	for i = 1, ns.UI.ItemsShownAtATime, 1 do
-		if ns.UI.ItemList[value + i - 1] ~= nil then
-			ns.UI:PopulateItem(ns.UI["Item" .. i], ns.UI.ItemList[value + i - 1])
-		else return end
-	end
-end
-
-function ns.UI.Invalidate()
+function ns.UI:Update()
 	ns.UI.Controls.TimeToReplyEditBox:SetText(Store.Settings.timeToReply)
 	ns.UI.Controls.ConfineAFK:SetChecked(Store.Settings.Confines.AFK)
 	ns.UI.Controls.ConfineDND:SetChecked(Store.Settings.Confines.DND)
@@ -127,56 +201,73 @@ function ns.UI.Invalidate()
 	ns.UI:ClearSelected()
 
 	local itemListCount = #ns.UI.ItemList
-	for i = 1, ns.UI.ItemsShownAtATime, 1 do
-		ns.UI["Item" .. i]:Show()
-	end
 
-	if itemListCount <= ns.UI.ItemsShownAtATime then
-		ns.UI.Scrollbar:Hide()
-		ns.UI:OnScrollValueChanged(1)
+	if itemListCount == 0 then
+		ns.UI.NoMessagesText:Show()
+	elseif itemListCount > 0 then
+		ns.UI.NoMessagesText:Hide()
 
-		if itemListCount < ns.UI.ItemsShownAtATime then
-			for i = itemListCount + 1, ns.UI.ItemsShownAtATime, 1 do
+		if itemListCount > ns.UI.ItemsShownAtATime then
+			ns.UI.Scrollbar:SetMinMaxValues(1, itemListCount - ns.UI.ItemsShownAtATime + 1)
+			ns.UI.Scrollbar:SetValue(1)
+			ns.UI.Scrollbar:Show()
+		else
+			ns.UI.Scrollbar:SetMinMaxValues(1,1)
+			ns.UI.Scrollbar:SetValue(1)
+			ns.UI.Scrollbar:Hide()
+		end
+
+		for i = 1, ns.UI.ItemsShownAtATime do
+			if i > itemListCount then
 				ns.UI["Item" .. i]:Hide()
+			else
+				ns.UI["Item" .. i]:Show()
+				ns.UI:PopulateItem(ns.UI["Item" .. i], ns.UI.ItemList[i])
 			end
 		end
-
-		if itemListCount == 0 then
-			ns.UI.NoMessagesText:Show()
-		else
-			ns.UI.NoMessagesText:Hide()
-		end
-	else
-		ns.UI.Scrollbar:SetMinMaxValues(1, itemListCount - ns.UI.ItemsShownAtATime + 1)
-		ns.UI.Scrollbar:SetValue(1)
-		ns.UI:OnScrollValueChanged(1)
-		ns.UI.Scrollbar:Show()
-
-		ns.UI.NoMessagesText:Hide()
 	end
 end
 
-function ns.UI:OnCheckedChanged()
-	Store.Settings.Confines[self.value] = self:GetChecked()
+function ns.UI:ClearSelected()
+	for i = 1, ns.UI.ItemsShownAtATime do
+		self["Item" .. i]:SetChecked(false)
+	end
 end
 
---Header
+function ns.UI:PopulateItem(item, msg)
+	item.reference = msg
+	item.Author:SetText("Author: |cFF" .. classColors[msg.authorClass] .. msg.author .. "|r")
+	item.Recipient:SetText("Recipient: |cFF" .. classColors[msg.recipientClass] .. msg.recipient .. "|r")
+	item.Timestamp:SetText(date("%Y-%m-%d %H:%M:%S", msg.timestamp))
+	item.Rationale:SetText(msg.rationale)
+	item.Msg:SetText(msg.msg)
+end
+
+--Window
+tinsert(UISpecialFrames, ns.UI:GetName())
+ns.UI:SetSize(800, 650)
+ns.UI:SetPoint("CENTER")
+ns.UI:SetMovable(true)
+ns.UI:SetClampedToScreen(true)
+ns.UI:EnableMouseWheel(true)
+ns.UI:SetBackdrop({
+	bgFile = "Interface\\FrameGeneral\\UI-Background-Rock",
+	edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+	tile = true,
+	tileSize = 256,
+	edgeSize = 32,
+	insets = { left = 8, right = 8, top = 8, bottom = 8 }})
+
+ns.UI:SetScript("OnMouseWheel", function(self, delta)
+	self:ClearSelected()
+	ns.UI.Scrollbar:SetValue(ns.UI.Scrollbar:GetValue() - delta)
+end)
+
+-- Header
 ns.UI.Header = CreateFrame("Frame", nil, ns.UI)
 ns.UI.Header:SetSize(192, 48)
 ns.UI.Header:SetPoint("TOP", 0, 16)
-
-function ns.UI.Header:OnMouseDown()
-	self:GetParent():StartMoving()
-	self:GetParent():SetUserPlaced(false)
-end
-
-function ns.UI.Header:OnMouseUp()
-	self:GetParent():StopMovingOrSizing()
-end
-
 ns.UI.Header:RegisterForDrag("LeftButton")
-ns.UI.Header:SetScript("OnMouseDown", ns.UI.Header.OnMouseDown)
-ns.UI.Header:SetScript("OnMouseUp", ns.UI.Header.OnMouseUp)
 
 ns.UI.Header.Texture = ns.UI.Header:CreateTexture(nil, "ARTWORK")
 ns.UI.Header.Texture:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Header")
@@ -188,36 +279,37 @@ ns.UI.Header.Title:SetPoint("CENTER")
 ns.UI.Header.Title:SetJustifyH("CENTER")
 ns.UI.Header.Title:SetText("Answering Machine")
 
---No Messages
+ns.UI.Header:SetScript("OnMouseDown", function(self)
+	self:GetParent():StartMoving()
+	self:GetParent():SetUserPlaced(false)
+end)
+
+ns.UI.Header:SetScript("OnMouseUp", function(self)
+	self:GetParent():StopMovingOrSizing()
+end)
+
+-- No Messages
 ns.UI.NoMessagesText = ns.UI:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 ns.UI.NoMessagesText:SetPoint("TOP", 0, -50)
 ns.UI.NoMessagesText:SetJustifyH("CENTER")
 ns.UI.NoMessagesText:SetJustifyV("CENTER")
 ns.UI.NoMessagesText:SetText("No messages")
 
---Controls
-ns.UI.Controls = CreateFrame("Frame", nil, ns.UI)
-ns.UI.Controls.Margin = 8
-ns.UI.Controls.Spacing = 8
+-- Controls
 ns.UI.Controls:SetPoint("TOPLEFT", ns.UI.Margin, -ns.UI.Margin)
-ns.UI.Controls:SetPoint("BOTTOMRIGHT", ns.UI, "BOTTOMLEFT", ns.UI.Margin + 200, ns.UI.Margin)
+ns.UI.Controls:SetPoint("BOTTOMLEFT", ns.UI.Margin, ns.UI.Margin)
+ns.UI.Controls:SetWidth(200)
 ns.UI.Controls:SetBackdrop({
     bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
     edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
     tile = true,
     tileSize = 16,
     edgeSize = 16,
-    insets = {
-        left = 5,
-        right = 5,
-        top = 5,
-        bottom = 4
-    }
-})
+    insets = { left = 5, right = 5, top = 5, bottom = 4 }})
 ns.UI.Controls:SetBackdropColor(0.09, 0.09, 0.09)
 ns.UI.Controls:SetBackdropBorderColor(0.5, 0.5, 0.5)
 
---Controls.TimeToReply
+-- Controls.TimeToReply
 ns.UI.Controls.TimeToReplyText = ns.UI.Controls:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 ns.UI.Controls.TimeToReplyText:SetPoint("TOP", 0, -ns.UI.Controls.Margin - ns.UI.Controls.Spacing)
 ns.UI.Controls.TimeToReplyText:SetJustifyH("CENTER")
@@ -232,250 +324,79 @@ ns.UI.Controls.TimeToReplyEditBox:SetFontObject(GameFontWhite)
 ns.UI.Controls.TimeToReplyEditBox:SetAutoFocus(false)
 ns.UI.Controls.TimeToReplyEditBox:SetNumeric(true)
 ns.UI.Controls.TimeToReplyEditBox:SetJustifyH("CENTER")
+
 ns.UI.Controls.TimeToReplyEditBox:SetScript("OnEnterPressed", function(self)
 	Store.Settings.timeToReply = self:GetNumber()
 	self:ClearFocus()
-	ns.UI.Invalidate()
+	ns.UI:Update()
 end)
 
---Controls.BtnRemoveSelected
-ns.UI.Controls.BtnRemoveSelected = CreateFrame("Button", nil, ns.UI.Controls)
+-- Controls.BtnRemoveSelected
+ns.UI.Controls.BtnRemoveSelected = CreateButton("Remove Selected", ns.UI.Controls)
 ns.UI.Controls.BtnRemoveSelected:SetPoint("TOP", ns.UI.Controls.TimeToReplyEditBox, "BOTTOM", 0, -ns.UI.Controls.Spacing * 3)
 ns.UI.Controls.BtnRemoveSelected:SetPoint("LEFT", ns.UI.Controls.Margin, 0)
 ns.UI.Controls.BtnRemoveSelected:SetPoint("RIGHT", -ns.UI.Controls.Margin, 0)
-ns.UI.Controls.BtnRemoveSelected:SetHeight(25)
-ns.UI.Controls.BtnRemoveSelected:SetNormalFontObject(GameFontNormal)
-ns.UI.Controls.BtnRemoveSelected:SetText("Remove Selected")
+
 ns.UI.Controls.BtnRemoveSelected:SetScript("OnClick", function()
-	for i = 1, ns.UI.ItemsShownAtATime, 1 do
-		if ns.UI["Item" .. i].selected then
+	for i = 1, ns.UI.ItemsShownAtATime do
+		if ns.UI["Item" .. i]:GetChecked() then
 			ns.Controller:RemoveMsg(ns.UI["Item" .. i].reference)
 		end
 	end
 
-	ns.UI.Invalidate()
+	ns.UI:Update()
 end)
 
-ns.UI.Controls.BtnRemoveSelected.ntex = ns.UI.Controls.BtnRemoveSelected:CreateTexture()
-ns.UI.Controls.BtnRemoveSelected.ntex:SetTexture("Interface\\Buttons\\UI-Panel-Button-Up")
-ns.UI.Controls.BtnRemoveSelected.ntex:SetTexCoord(0, 0.625, 0, 0.6875)
-ns.UI.Controls.BtnRemoveSelected.ntex:SetAllPoints()
-ns.UI.Controls.BtnRemoveSelected:SetNormalTexture(ns.UI.Controls.BtnRemoveSelected.ntex)
-
-ns.UI.Controls.BtnRemoveSelected.htex = ns.UI.Controls.BtnRemoveSelected:CreateTexture()
-ns.UI.Controls.BtnRemoveSelected.htex:SetTexture("Interface\\Buttons\\UI-Panel-Button-Highlight")
-ns.UI.Controls.BtnRemoveSelected.htex:SetTexCoord(0, 0.625, 0, 0.6875)
-ns.UI.Controls.BtnRemoveSelected.htex:SetAllPoints()
-ns.UI.Controls.BtnRemoveSelected:SetHighlightTexture(ns.UI.Controls.BtnRemoveSelected.htex)
-
-ns.UI.Controls.BtnRemoveSelected.ptex = ns.UI.Controls.BtnRemoveSelected:CreateTexture()
-ns.UI.Controls.BtnRemoveSelected.ptex:SetTexture("Interface\\Buttons\\UI-Panel-Button-Down")
-ns.UI.Controls.BtnRemoveSelected.ptex:SetTexCoord(0, 0.625, 0, 0.6875)
-ns.UI.Controls.BtnRemoveSelected.ptex:SetAllPoints()
-ns.UI.Controls.BtnRemoveSelected:SetPushedTexture(ns.UI.Controls.BtnRemoveSelected.ptex)
-
---Controls.ConfineTrackingTo
+-- Controls.ConfineTrackingTo
 ns.UI.Controls.ConfineTrackingTo = ns.UI.Controls:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 ns.UI.Controls.ConfineTrackingTo:SetPoint("TOP", ns.UI.Controls.BtnRemoveSelected, "BOTTOM", 0, -ns.UI.Controls.Spacing * 3)
 ns.UI.Controls.ConfineTrackingTo:SetPoint("LEFT", ns.UI.Controls.Margin, 0)
-ns.UI.Controls.ConfineTrackingTo:SetPoint("RIGHT", -ns.UI.Controls.Margin, 0)
+ns.UI.Controls.ConfineTrackingTo:SetPoint("Right", -ns.UI.Controls.Margin, 0)
 ns.UI.Controls.ConfineTrackingTo:SetJustifyH("LEFT")
 ns.UI.Controls.ConfineTrackingTo:SetText("Confine Tracking To:")
 
---Controls.ConfineAFK
-ns.UI.Controls.ConfineAFK = CreateFrame("CheckButton", "AMConfineAFK", ns.UI.Controls, "ChatConfigCheckButtonTemplate")
-ns.UI.Controls.ConfineAFK:SetPoint("TOPLEFT", ns.UI.Controls.ConfineTrackingTo, "BOTTOMLEFT", 0, -ns.UI.Controls.Spacing)
-ns.UI.Controls.ConfineAFK.value = "AFK"
-ns.UI.Controls.ConfineAFK:SetScript("OnClick", ns.UI.OnCheckedChanged)
-_G[ns.UI.Controls.ConfineAFK:GetName() .. "Text"]:SetText("AFK")
-_G[ns.UI.Controls.ConfineAFK:GetName() .. "Text"]:SetPoint("LEFT", ns.UI.Controls.ConfineAFK, "RIGHT", ns.UI.Controls.Margin, 0)
-_G[ns.UI.Controls.ConfineAFK:GetName() .. "Text"]:SetPoint("RIGHT", ns.UI.Controls, "RIGHT", -ns.UI.Controls.Margin, 0)
+ns.UI.Controls.ConfineAFK = CreateCheckBox("AFK", ns.UI.Controls, { "TOPLEFT", ns.UI.Controls.ConfineTrackingTo, "BOTTOMLEFT", 0, -ns.UI.Controls.Spacing })
+ns.UI.Controls.ConfineDND = CreateCheckBox("DND", ns.UI.Controls, { "TOP", ns.UI.Controls.ConfineAFK, "BOTTOM" })
+ns.UI.Controls.ConfineBattleground = CreateCheckBox("Battleground", ns.UI.Controls, { "TOP", ns.UI.Controls.ConfineDND, "BOTTOM" })
+ns.UI.Controls.ConfineArena = CreateCheckBox("Arena", ns.UI.Controls, { "TOP", ns.UI.Controls.ConfineBattleground, "BOTTOM" })
+ns.UI.Controls.ConfineDungeon = CreateCheckBox("Dungeon", ns.UI.Controls, { "TOP", ns.UI.Controls.ConfineArena, "BOTTOM" })
+ns.UI.Controls.ConfineRaid = CreateCheckBox("Raid", ns.UI.Controls, { "TOP", ns.UI.Controls.ConfineDungeon, "BOTTOM" })
+ns.UI.Controls.ConfineScenario = CreateCheckBox("Scenario", ns.UI.Controls, { "TOP", ns.UI.Controls.ConfineRaid, "BOTTOM" })
 
---Controls.ConfineDND
-ns.UI.Controls.ConfineDND = CreateFrame("CheckButton", "AMConfineDND", ns.UI.Controls, "ChatConfigCheckButtonTemplate")
-ns.UI.Controls.ConfineDND:SetPoint("TOP", ns.UI.Controls.ConfineAFK, "BOTTOM")
-ns.UI.Controls.ConfineDND.value = "DND"
-ns.UI.Controls.ConfineDND:SetScript("OnClick", ns.UI.OnCheckedChanged)
-_G[ns.UI.Controls.ConfineDND:GetName() .. "Text"]:SetText("DND")
-_G[ns.UI.Controls.ConfineDND:GetName() .. "Text"]:SetPoint("LEFT", ns.UI.Controls.ConfineDND, "RIGHT", ns.UI.Controls.Margin, 0)
-_G[ns.UI.Controls.ConfineDND:GetName() .. "Text"]:SetPoint("RIGHT", ns.UI.Controls, "RIGHT", -ns.UI.Controls.Margin, 0)
-
---Controls.ConfineBattleground
-ns.UI.Controls.ConfineBattleground = CreateFrame("CheckButton", "AMConfineBattleground", ns.UI.Controls, "ChatConfigCheckButtonTemplate")
-ns.UI.Controls.ConfineBattleground:SetPoint("TOP", ns.UI.Controls.ConfineDND, "BOTTOM")
-ns.UI.Controls.ConfineBattleground.value = "Battleground"
-ns.UI.Controls.ConfineBattleground:SetScript("OnClick", ns.UI.OnCheckedChanged)
-_G[ns.UI.Controls.ConfineBattleground:GetName() .. "Text"]:SetText("Battleground")
-_G[ns.UI.Controls.ConfineBattleground:GetName() .. "Text"]:SetPoint("LEFT", ns.UI.Controls.ConfineBattleground, "RIGHT", ns.UI.Controls.Margin, 0)
-_G[ns.UI.Controls.ConfineBattleground:GetName() .. "Text"]:SetPoint("RIGHT", ns.UI.Controls, "RIGHT", -ns.UI.Controls.Margin, 0)
-
---Controls.ConfineArena
-ns.UI.Controls.ConfineArena = CreateFrame("CheckButton", "AMConfineArena", ns.UI.Controls, "ChatConfigCheckButtonTemplate")
-ns.UI.Controls.ConfineArena:SetPoint("TOP", ns.UI.Controls.ConfineBattleground, "BOTTOM")
-ns.UI.Controls.ConfineArena.value = "Arena"
-ns.UI.Controls.ConfineArena:SetScript("OnClick", ns.UI.OnCheckedChanged)
-_G[ns.UI.Controls.ConfineArena:GetName() .. "Text"]:SetText("Arena")
-_G[ns.UI.Controls.ConfineArena:GetName() .. "Text"]:SetPoint("LEFT", ns.UI.Controls.ConfineArena, "RIGHT", ns.UI.Controls.Margin, 0)
-_G[ns.UI.Controls.ConfineArena:GetName() .. "Text"]:SetPoint("RIGHT", ns.UI.Controls, "RIGHT", -ns.UI.Controls.Margin, 0)
-
---Controls.ConfineDungeon
-ns.UI.Controls.ConfineDungeon = CreateFrame("CheckButton", "AMConfineDungeon", ns.UI.Controls, "ChatConfigCheckButtonTemplate")
-ns.UI.Controls.ConfineDungeon:SetPoint("TOP", ns.UI.Controls.ConfineArena, "BOTTOM")
-ns.UI.Controls.ConfineDungeon.value = "Dungeon"
-ns.UI.Controls.ConfineDungeon:SetScript("OnClick", ns.UI.OnCheckedChanged)
-_G[ns.UI.Controls.ConfineDungeon:GetName() .. "Text"]:SetText("Dungeon")
-_G[ns.UI.Controls.ConfineDungeon:GetName() .. "Text"]:SetPoint("LEFT", ns.UI.Controls.ConfineDungeon, "RIGHT", ns.UI.Controls.Margin, 0)
-_G[ns.UI.Controls.ConfineDungeon:GetName() .. "Text"]:SetPoint("RIGHT", ns.UI.Controls, "RIGHT", -ns.UI.Controls.Margin, 0)
-
---Controls.ConfineRaid
-ns.UI.Controls.ConfineRaid = CreateFrame("CheckButton", "AMConfineRaid", ns.UI.Controls, "ChatConfigCheckButtonTemplate")
-ns.UI.Controls.ConfineRaid:SetPoint("TOP", ns.UI.Controls.ConfineDungeon, "BOTTOM")
-ns.UI.Controls.ConfineRaid.value = "Raid"
-ns.UI.Controls.ConfineRaid:SetScript("OnClick", ns.UI.OnCheckedChanged)
-_G[ns.UI.Controls.ConfineRaid:GetName() .. "Text"]:SetText("Raid")
-_G[ns.UI.Controls.ConfineRaid:GetName() .. "Text"]:SetPoint("LEFT", ns.UI.Controls.ConfineRaid, "RIGHT", ns.UI.Controls.Margin, 0)
-_G[ns.UI.Controls.ConfineRaid:GetName() .. "Text"]:SetPoint("RIGHT", ns.UI.Controls, "RIGHT", -ns.UI.Controls.Margin, 0)
-
---Controls.ConfineScenario
-ns.UI.Controls.ConfineScenario = CreateFrame("CheckButton", "AMConfineScenario", ns.UI.Controls, "ChatConfigCheckButtonTemplate")
-ns.UI.Controls.ConfineScenario:SetPoint("TOP", ns.UI.Controls.ConfineRaid, "BOTTOM")
-ns.UI.Controls.ConfineScenario.value = "Scenario"
-ns.UI.Controls.ConfineScenario:SetScript("OnClick", ns.UI.OnCheckedChanged)
-_G[ns.UI.Controls.ConfineScenario:GetName() .. "Text"]:SetText("Scenario")
-_G[ns.UI.Controls.ConfineScenario:GetName() .. "Text"]:SetPoint("LEFT", ns.UI.Controls.ConfineScenario, "RIGHT", ns.UI.Controls.Margin, 0)
-_G[ns.UI.Controls.ConfineScenario:GetName() .. "Text"]:SetPoint("RIGHT", ns.UI.Controls, "RIGHT", -ns.UI.Controls.Margin, 0)
-
---Controls.BtnClose
-ns.UI.Controls.BtnClose = CreateFrame("Button", nil, ns.UI.Controls)
+-- Controls.BtnClose
+ns.UI.Controls.BtnClose = CreateButton("Close", ns.UI.Controls)
 ns.UI.Controls.BtnClose:SetPoint("BOTTOM", 0, ns.UI.Controls.Margin)
 ns.UI.Controls.BtnClose:SetPoint("LEFT", ns.UI.Controls.Margin, 0)
 ns.UI.Controls.BtnClose:SetPoint("RIGHT", -ns.UI.Controls.Margin, 0)
-ns.UI.Controls.BtnClose:SetHeight(25)
-ns.UI.Controls.BtnClose:SetNormalFontObject(GameFontNormal)
-ns.UI.Controls.BtnClose:SetText("Close")
-ns.UI.Controls.BtnClose:SetScript("OnClick", ns.UI.HideUI)
 
-ns.UI.Controls.BtnClose.ntex = ns.UI.Controls.BtnClose:CreateTexture()
-ns.UI.Controls.BtnClose.ntex:SetTexture("Interface\\Buttons\\UI-Panel-Button-Up")
-ns.UI.Controls.BtnClose.ntex:SetTexCoord(0, 0.625, 0, 0.6875)
-ns.UI.Controls.BtnClose.ntex:SetAllPoints()
-ns.UI.Controls.BtnClose:SetNormalTexture(ns.UI.Controls.BtnClose.ntex)
+ns.UI.Controls.BtnClose:SetScript("OnClick", function()
+	ns.UI:HideUI()
+end)
 
-ns.UI.Controls.BtnClose.htex = ns.UI.Controls.BtnClose:CreateTexture()
-ns.UI.Controls.BtnClose.htex:SetTexture("Interface\\Buttons\\UI-Panel-Button-Highlight")
-ns.UI.Controls.BtnClose.htex:SetTexCoord(0, 0.625, 0, 0.6875)
-ns.UI.Controls.BtnClose.htex:SetAllPoints()
-ns.UI.Controls.BtnClose:SetHighlightTexture(ns.UI.Controls.BtnClose.htex)
-
-ns.UI.Controls.BtnClose.ptex = ns.UI.Controls.BtnClose:CreateTexture()
-ns.UI.Controls.BtnClose.ptex:SetTexture("Interface\\Buttons\\UI-Panel-Button-Down")
-ns.UI.Controls.BtnClose.ptex:SetTexCoord(0, 0.625, 0, 0.6875)
-ns.UI.Controls.BtnClose.ptex:SetAllPoints()
-ns.UI.Controls.BtnClose:SetPushedTexture(ns.UI.Controls.BtnClose.ptex)
-
---Scrollbar
+-- Scrollbar
 ns.UI.Scrollbar = CreateFrame("Slider", nil, ns.UI, "UIPanelScrollBarTemplate")
-ns.UI.Scrollbar:SetPoint("TOPRIGHT", ns.UI, "TOPRIGHT", -ns.UI.Margin, -ns.UI.Margin - 16)
-ns.UI.Scrollbar:SetPoint("BOTTOMRIGHT", ns.UI, "BOTTOMRIGHT", -ns.UI.Margin, ns.UI.Margin + 16)
+ns.UI.Scrollbar:SetPoint("TOPRIGHT", -ns.UI.Margin, -ns.UI.Margin - 16)
+ns.UI.Scrollbar:SetPoint("BOTTOMRIGHT", -ns.UI.Margin, ns.UI.Margin + 16)
 ns.UI.Scrollbar:SetWidth(16)
 ns.UI.Scrollbar:SetValueStep(1)
-ns.UI.Scrollbar:SetScript("OnValueChanged", ns.UI.OnScrollValueChanged)
 
---Items
-function ns.UI.ItemOnClick(item)
-	if item.selected then
-		item:SetBackdropColor(0.09, 0.09, 0.09)
-		item:SetBackdropBorderColor(1.00, 1.00, 1.00)
-		item.selected = false
-	else
-		item:SetBackdropColor(0.00, 0.3, 0.3)
-		item:SetBackdropBorderColor(0.00, 1.00, 1.00)
-		item.selected = true
+ns.UI.Scrollbar:SetScript("OnValueChanged", function(self, value)
+	ns.UI:ClearSelected()
+
+	for i = 1, ns.UI.ItemsShownAtATime do
+		if ns.UI.ItemList[value + i - 1] ~= nil then
+			ns.UI:PopulateItem(ns.UI["Item" .. i], ns.UI.ItemList[value + i - 1])
+		else return end
 	end
-end
+end)
 
---Item1
-ns.UI.Item1 = CreateFrame("Frame", nil, ns.UI)
-ns.UI.Item1:SetPoint("TOPLEFT", ns.UI.Controls, "TOPRIGHT", ns.UI.ItemSpacingHorizontal, -ns.UI.Margin - ns.UI.ItemSpacingVertical)
-ns.UI.Item1:SetPoint("TOPRIGHT", ns.UI.Scrollbar, "TOPLEFT", -ns.UI.ItemSpacingHorizontal, -ns.UI.Margin - ns.UI.ItemSpacingVertical)
-ns.UI.Item1:SetHeight(110)
-ns.UI.Item1:SetBackdrop({
-    bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-    tile = true,
-    tileSize = 16,
-    edgeSize = 16,
-    insets = {
-        left = 5,
-        right = 5,
-        top = 5,
-        bottom = 4
-    }
-})
-ns.UI.Item1:SetBackdropColor(0.09, 0.09, 0.09)
-ns.UI.Item1.selected = false
-ns.UI.Item1:SetScript("OnMouseDown", ns.UI.ItemOnClick)
-
-ns.UI.Item1.Author = ns.UI.Item1:CreateFontString(nil, "ARTWORK", "SystemFont_Huge1")
-ns.UI.Item1.Author:SetPoint("TOPLEFT", ns.UI.ItemMargin, -ns.UI.ItemMargin)
-ns.UI.Item1.Author:SetPoint("TOPRIGHT", ns.UI.Item1, "TOP", 0, -ns.UI.ItemMargin)
-ns.UI.Item1.Author:SetJustifyH("LEFT")
-
-ns.UI.Item1.Recipient = ns.UI.Item1:CreateFontString(nil, "ARTWORK", "SystemFont_Med3")
-ns.UI.Item1.Recipient:SetPoint("LEFT", ns.UI.Item1.Author, "RIGHT", ns.UI.ItemMargin, 0)
-ns.UI.Item1.Recipient:SetPoint("TOPRIGHT", -ns.UI.ItemMargin, -ns.UI.ItemMargin)
-ns.UI.Item1.Recipient:SetJustifyH("RIGHT")
-
-ns.UI.Item1.Timestamp = ns.UI.Item1:CreateFontString(nil, "ARTWORK", "SystemFont_Small")
-ns.UI.Item1.Timestamp:SetPoint("TOPLEFT", ns.UI.Item1.Author, "BOTTOMLEFT", 0, -4)
-ns.UI.Item1.Timestamp:SetPoint("TOPRIGHT", ns.UI.Item1.Author, "BOTTOMRIGHT", 0, -4)
-ns.UI.Item1.Timestamp:SetJustifyH("LEFT")
-
-ns.UI.Item1.Rationale = ns.UI.Item1:CreateFontString(nil, "ARTWORK", "SystemFont_Small")
-ns.UI.Item1.Rationale:SetPoint("TOPLEFT", ns.UI.Item1.Recipient, "BOTTOMLEFT", 0, -4)
-ns.UI.Item1.Rationale:SetPoint("TOPRIGHT", ns.UI.Item1.Recipient, "BOTTOMRIGHT", 0, -4)
-ns.UI.Item1.Rationale:SetJustifyH("RIGHT")
-
-ns.UI.Item1.Msg = ns.UI.Item1:CreateFontString(nil, "ARTWORK", "SystemFont_Med3")
-ns.UI.Item1.Msg:SetPoint("TOPLEFT", ns.UI.Item1.Timestamp, "BOTTOMLEFT", 0, -ns.UI.ItemMargin)
-ns.UI.Item1.Msg:SetPoint("BOTTOMRIGHT", ns.UI.Item1, "BOTTOMRIGHT", -ns.UI.ItemMargin, ns.UI.ItemMargin)
-ns.UI.Item1.Msg:SetJustifyH("LEFT")
-
---Generate remaining items, place in relation to previous
-for i = 2, ns.UI.ItemsShownAtATime, 1 do
-	ns.UI["Item" .. i] = CreateFrame("Frame", nil, ns.UI)
-	ns.UI["Item" .. i]:SetPoint("TOPLEFT", ns.UI["Item" .. i - 1], "BOTTOMLEFT", 0, -ns.UI.ItemMargin)
-	ns.UI["Item" .. i]:SetPoint("TOPRIGHT", ns.UI["Item" .. i - 1], "BOTTOMRIGHT", 0, -ns.UI.ItemMargin)
-	ns.UI["Item" .. i]:SetHeight(110)
-	ns.UI["Item" .. i]:SetBackdrop(ns.UI.Item1:GetBackdrop())
-	ns.UI["Item" .. i]:SetBackdropColor(0.09, 0.09, 0.09)
-	ns.UI["Item" .. i].selected = false
-	ns.UI["Item" .. i]:SetScript("OnMouseDown", ns.UI.ItemOnClick)
-
-	ns.UI["Item" .. i].Author = ns.UI["Item" .. i]:CreateFontString(nil, "ARTWORK", "SystemFont_Huge1")
-	ns.UI["Item" .. i].Author:SetPoint("TOPLEFT", ns.UI.ItemMargin, -ns.UI.ItemMargin)
-	ns.UI["Item" .. i].Author:SetPoint("TOPRIGHT", ns.UI["Item" .. i], "TOP", 0, -ns.UI.ItemMargin)
-	ns.UI["Item" .. i].Author:SetJustifyH("LEFT")
-
-	ns.UI["Item" .. i].Recipient = ns.UI["Item" .. i]:CreateFontString(nil, "ARTWORK", "SystemFont_Med3")
-	ns.UI["Item" .. i].Recipient:SetPoint("LEFT", ns.UI["Item" .. i].Author, "RIGHT", ns.UI.ItemMargin, 0)
-	ns.UI["Item" .. i].Recipient:SetPoint("TOPRIGHT", -ns.UI.ItemMargin, -ns.UI.ItemMargin)
-	ns.UI["Item" .. i].Recipient:SetJustifyH("RIGHT")
-
-	ns.UI["Item" .. i].Timestamp = ns.UI["Item" .. i]:CreateFontString(nil, "ARTWORK", "SystemFont_Small")
-	ns.UI["Item" .. i].Timestamp:SetPoint("TOPLEFT", ns.UI["Item" .. i].Author, "BOTTOMLEFT", 0, -4)
-	ns.UI["Item" .. i].Timestamp:SetPoint("TOPRIGHT", ns.UI["Item" .. i].Author, "BOTTOMRIGHT", 0, -4)
-	ns.UI["Item" .. i].Timestamp:SetJustifyH("LEFT")
-
-	ns.UI["Item" .. i].Rationale = ns.UI["Item" .. i]:CreateFontString(nil, "ARTWORK", "SystemFont_Small")
-	ns.UI["Item" .. i].Rationale:SetPoint("TOPLEFT", ns.UI["Item" .. i].Recipient, "BOTTOMLEFT", 0, -4)
-	ns.UI["Item" .. i].Rationale:SetPoint("TOPRIGHT", ns.UI["Item" .. i].Recipient, "BOTTOMRIGHT", 0, -4)
-	ns.UI["Item" .. i].Rationale:SetJustifyH("RIGHT")
-
-	ns.UI["Item" .. i].Msg = ns.UI["Item" .. i]:CreateFontString(nil, "ARTWORK", "SystemFont_Med3")
-	ns.UI["Item" .. i].Msg:SetPoint("TOPLEFT", ns.UI["Item" .. i].Timestamp, "BOTTOMLEFT", 0, -ns.UI.ItemMargin)
-	ns.UI["Item" .. i].Msg:SetPoint("BOTTOMRIGHT", ns.UI["Item" .. i], "BOTTOMRIGHT", -ns.UI.ItemMargin, ns.UI.ItemMargin)
-	ns.UI["Item" .. i].Msg:SetJustifyH("LEFT")
+ns.UI.Item1 = CreateItemContainer(
+	{ "TOPLEFT", ns.UI.Controls, "TOPRIGHT", ns.UI.ItemSpacingHorizontal, -ns.UI.Margin - ns.UI.ItemSpacingVertical },
+	{ "TOPRIGHT", ns.UI.Scrollbar, "TOPLEFT", -ns.UI.ItemSpacingHorizontal, -ns.UI.Margin - ns.UI.ItemSpacingVertical })
+for i = 2, ns.UI.ItemsShownAtATime do
+	ns.UI["Item" .. i] = CreateItemContainer(
+		{ "TOPLEFT", ns.UI["Item" .. i - 1], "BOTTOMLEFT", 0, -ns.UI.ItemSpacingVertical },
+		{ "TOPRIGHT", ns.UI["Item" .. i - 1], "BOTTOMRIGHT", 0, -ns.UI.ItemSpacingVertical })
 end
 
 SLASH_ANSWERINGMACHINE1 = '/am'
