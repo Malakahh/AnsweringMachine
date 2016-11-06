@@ -167,6 +167,15 @@ local function CreateItemContainer(p1, p2)
 		end
 	end)
 
+	frame:SetScript("OnDoubleClick", function (self)
+		if self.reference.authorClass ~= "BNET" then
+			ChatFrame_SendTell(self.reference.author, DEFAULT_CHAT_FRAME)
+		end
+
+		ns.Controller:RemoveMsg(self.reference)
+		ns.UI:Update()
+	end)
+
 	return frame
 end
 
