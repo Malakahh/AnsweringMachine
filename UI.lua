@@ -30,6 +30,33 @@ local classColors = {
 -- 	WARRIOR = { 0.78, 0.61, 0.43 }
 }
 
+local function SetTilingArtwork(frame, bgFile, edgeFile, edgeSize, insets)
+	if type(bgFile) == "table" and edgeFile == nil then --It's a wrapped table. Unwrap it!
+		if bgFile.bgFile == nil and bgFile.edgeFile == nil then
+			bgFile, edgeFile, edgeSize, insets = unpack(bgFile)
+		else
+			edgeFile = bgFile.edgeFile
+			edgeSize = bgFile.edgeSize
+			insets = bgFile.insets
+			bgFile = bgFile.bgFile
+		end
+	end
+
+	local tex = frame:CreateTexture(nil, "BACKGROUND")
+	tex:SetTexture(bgFile, true, true)
+	tex:SetVertTile(true)
+	tex:SetHorizTile(true)
+	tex:SetPoint("TOPLEFT", insets.left, -insets.top)
+	tex:SetPoint("BOTTOMRIGHT", -insets.right, insets.bottom)
+	frame.bgTex = tex
+
+	frame:SetBackdrop({
+		edgeFile = edgeFile,
+		edgeSize = edgeSize,
+		insets = insets
+	})
+end
+
 local function CreateCheckBox(value, parent, point)
 	local chk = CreateFrame("CheckButton", "CheckBox" .. value, parent, "ChatConfigCheckButtonTemplate")
 	chk:SetPoint(unpack(point))
@@ -80,14 +107,14 @@ local function CreateItemContainer(p1, p2)
 	frame:SetPoint(unpack(p2))
 	frame:SetHeight(frameHeight)
 
-	frame:SetBackdrop({
+	SetTilingArtwork(frame, {
 		bgFile = "Interface\\FontStyles\\FontStyleParchment",
 		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
 		tile = true,
 		tileSize = 80,
 		edgeSize = 24,
 		insets = { left = 6, right = 6, top = 6, bottom = 6 }})
-	frame:SetBackdropColor(0.5, 0.5, 0.5)
+	frame.bgTex:SetVertexColor(0.5, 0.5, 0.5)
 	frame:SetBackdropBorderColor(0.227, 0.117, 0)
 
 	frame.htex = frame:CreateTexture(nil, "ARTWORK")
@@ -250,7 +277,8 @@ ns.UI:SetPoint("CENTER")
 ns.UI:SetMovable(true)
 ns.UI:SetClampedToScreen(true)
 ns.UI:EnableMouseWheel(true)
-ns.UI:SetBackdrop({
+
+SetTilingArtwork(ns.UI, {
 	bgFile = "Interface\\FrameGeneral\\UI-Background-Rock",
 	edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
 	tile = true,
@@ -299,14 +327,15 @@ ns.UI.NoMessagesText:SetText("No messages")
 ns.UI.Controls:SetPoint("TOPLEFT", ns.UI.Margin, -ns.UI.Margin)
 ns.UI.Controls:SetPoint("BOTTOMLEFT", ns.UI.Margin, ns.UI.Margin)
 ns.UI.Controls:SetWidth(200)
-ns.UI.Controls:SetBackdrop({
+
+SetTilingArtwork(ns.UI.Controls, {
     bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
     edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
     tile = true,
     tileSize = 16,
     edgeSize = 16,
     insets = { left = 5, right = 5, top = 5, bottom = 4 }})
-ns.UI.Controls:SetBackdropColor(0.09, 0.09, 0.09)
+ns.UI.Controls.bgTex:SetVertexColor(0.09, 0.09, 0.09)
 ns.UI.Controls:SetBackdropBorderColor(0.5, 0.5, 0.5)
 
 -- Controls.TimeToReply
